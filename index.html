@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Life Reset 66 天 | 人生重置計畫</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0A0A0C',
+                            card: '#16161A',
+                            border: '#26262E',
+                            sub: '#1E1E24'
+                        },
+                        orange: {
+                            brand: '#FF5500',
+                            glow: '#FF7700',
+                            dark: '#CC4400'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'PingFang TC', 'Microsoft JhengHei', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Courier New', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            background-color: #050507;
+            color: #F3F4F6;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 3px; height: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 99px; }
+
+        /* Glowing text & border accents */
+        .orange-glow {
+            text-shadow: 0 0 12px rgba(255, 85, 0, 0.6);
+        }
+        .box-glow {
+            box-shadow: 0 0 15px rgba(255, 85, 0, 0.25);
+        }
+        .border-glow {
+            border-color: #FF5500 !important;
+            box-shadow: 0 0 10px rgba(255, 85, 0, 0.3);
+        }
+
+        /* XP Popup Animation */
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-35px) scale(1.2); }
+        }
+        .xp-float {
+            animation: floatUp 0.8s ease-out forwards;
+        }
+
+        /* RPG Card Grid Mask */
+        .card-bg-gradient {
+            background: linear-gradient(180deg, rgba(22, 22, 26, 0.95) 0%, rgba(14, 14, 18, 0.98) 100%);
+        }
+    </style>
+</head>
+<body class="flex justify-center items-center min-h-screen p-0 sm:p-4 font-sans">
+
+    <!-- Mobile Device Container -->
+    <div id="app" class="w-full sm:max-w-[412px] h-screen sm:h-[870px] bg-dark-bg sm:rounded-[44px] shadow-2xl border-0 sm:border-[8px] border-[#1F1F24] overflow-hidden flex flex-col relative">
+
+        <!-- Top Status Bar -->
+        <div class="pt-3 px-6 pb-2 flex justify-between items-center text-xs text-stone-400 font-mono z-30 shrink-0 bg-dark-bg/90 backdrop-blur">
+            <span id="system-time">09:41</span>
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] text-orange-brand font-bold">66 DAYS RESET</span>
+                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                <i data-lucide="battery" class="w-4 h-4"></i>
+            </div>
+        </div>
+
+        <!-- Header RPG Bar -->
+        <header class="px-5 py-3 bg-dark-card border-b border-dark-border shrink-0 z-20">
+            <div class="flex justify-between items-center mb-2">
+                <!-- Days Ratio -->
+                <div class="flex items-baseline gap-1.5">
+                    <span class="text-2xl font-black italic tracking-tighter text-white">第 <span id="current-day-num" class="text-orange-brand orange-glow">1</span> 天</span>
+                    <span class="text-xs text-stone-400 font-mono">/ 66</span>
+                </div>
+
+                <!-- Mini Stats Badge -->
+                <div class="flex items-center gap-2">
+                    <!-- Streak -->
+                    <div class="flex items-center gap-1 bg-stone-900 border border-stone-800 px-2.5 py-1 rounded-full text-xs font-bold text-amber-500">
+                        <i data-lucide="flame" class="w-3.5 h-3.5 fill-amber-500"></i>
+                        <span id="streak-count">1</span>
+                    </div>
+                    <!-- Level -->
+                    <div class="flex items-center gap-1 bg-orange-brand/10 border border-orange-brand/40 px-2.5 py-1 rounded-full text-xs font-black text-orange-brand">
+                        <span>Lv.</span>
+                        <span id="user-level">1</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- XP Progress Bar -->
+            <div class="space-y-1">
+                <div class="flex justify-between text-[10px] font-mono text-stone-400">
+                    <span id="level-title" class="text-stone-300 font-bold">【剛覺醒的自律者】</span>
+                    <span><span id="current-xp" class="text-orange-brand font-bold">0</span> / <span id="max-xp">300</span> XP</span>
+                </div>
+                <div class="w-full bg-stone-900 h-2 rounded-full overflow-hidden border border-stone-800 p-0.5">
+                    <div id="xp-progress-bar" class="bg-gradient-to-r from-orange-dark to-orange-brand h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto px-4 py-4 space-y-4 relative" id="main-content">
+            <!-- Dynamic Content Injected Here -->
+        </main>
+
+        <!-- Floating Action Floating XP Effect Container -->
+        <div id="xp-float-container" class="pointer-events-none fixed inset-0 z-50"></div>
+
+        <!-- Navigation Bar -->
+        <nav class="bg-dark-card border-t border-dark-border px-3 py-2 flex justify-around items-center shrink-0 z-30">
+            <button onclick="switchTab('tasks')" id="nav-tasks" class="nav-btn flex flex-col items-center gap-1 text-orange-brand">
+                <i data-lucide="check-square" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">任務</span>
+            </button>
+            <button onclick="switchTab('stats')" id="nav-stats" class="nav-btn flex flex-col items-center gap-1 text-stone-500">
+                <i data-lucide="shield" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">屬性</span>
+            </button>
+            <button onclick="switchTab('achievements')" id="nav-achievements" class="nav-btn flex flex-col items-center gap-1 text-stone-500">
+                <i data-lucide="award" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">成就</span>
+            </button>
+            <button onclick="switchTab('ranks')" id="nav-ranks" class="nav-btn flex flex-col items-center gap-1 text-stone-500">
+                <i data-lucide="trophy" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">賽季</span>
+            </button>
+            <button onclick="switchTab('profile')" id="nav-profile" class="nav-btn flex flex-col items-center gap-1 text-stone-500">
+                <i data-lucide="user" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">戰友</span>
+            </button>
+        </nav>
+
+        <!-- Science Info Modal Trigger Modal -->
+        <div id="science-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-5">
+            <div class="bg-dark-card border border-orange-brand/30 rounded-3xl p-6 space-y-4 max-w-xs text-center shadow-2xl">
+                <div class="w-12 h-12 bg-orange-brand/20 text-orange-brand rounded-2xl flex items-center justify-center mx-auto">
+                    <i data-lucide="brain" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-lg font-black text-white">為什麼是 66 天？</h3>
+                <p class="text-xs text-stone-300 leading-relaxed text-left">
+                    根據倫敦大學學院 (UCL) 心理學家 Phillippa Lally 的權威研究，養成一個自動化的新習慣平均需要 <strong>66 天</strong>。<br><br>
+                    從「每天凌晨5點睡」調整到「早上10點起」，前21天是神經重塑期，66天後這將成為你無需耗費意志力的生活本能！
+                </p>
+                <button onclick="toggleScienceModal(false)" class="w-full py-3 bg-orange-brand text-white rounded-2xl font-bold text-xs uppercase tracking-wider hover:bg-orange-dark transition-all">
+                    了解，開始執行！
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Default Target Habits based on user goals
+        const INITIAL_HABITS = [
+            {
+                id: 'sleep_early',
+                title: '凌晨 02:00 前入睡',
+                desc: '階段一：先將 sleep 規律拉回 2 點（目標逐步調至 12 點）',
+                xp: 60,
+                stat: 'discipline',
+                statName: '紀律',
+                completed: false,
+                streak: 1,
+                time: '02:00 AM'
+            },
+            {
+                id: 'wake_up',
+                title: '早上 10:00 起床',
+                desc: '擺脫下午才起的惡性循環，起床後立即接觸陽光',
+                xp: 60,
+                stat: 'strength',
+                statName: '力量',
+                completed: false,
+                streak: 1,
+                time: '10:00 AM'
+            },
+            {
+                id: 'drink_water',
+                title: '每天飲水 2,000ml',
+                desc: '加速代謝，改善熬夜帶來的毒素與皮膚疲態',
+                xp: 40,
+                stat: 'confidence',
+                statName: '自信',
+                completed: false,
+                streak: 1,
+                time: '全天'
+            },
+            {
+                id: 'workout',
+                title: '運動 30 分鐘',
+                desc: '快走/重訓/伏地挺身，提供夜晚好眠所需的身體疲勞感',
+                xp: 50,
+                stat: 'strength',
+                statName: '力量',
+                completed: false,
+                streak: 1,
+                time: '下午 / 晚上'
+            },
+            {
+                id: 'focus_read',
+                title: '閱讀或專注學習 20 分鐘',
+                desc: '睡前戒斷手機藍光，用閱讀幫助腦波降頻',
+                xp: 50,
+                stat: 'wisdom',
+                statName: '智慧',
+                completed: false,
+                streak: 1,
+                time: '睡前 30 分'
+            }
+        ];
+
+        // State Management
+        let appData = {
+            day: 1,
+            xp: 120,
+            level: 1,
+            streak: 3,
+            habits: INITIAL_HABITS,
+            stats: {
+                wisdom: 100,      // 智慧
+                confidence: 120,  // 自信
+                strength: 110,    // 力量
+                discipline: 95,   // 紀律
+                focus: 105        // 專注
+            },
+            activeTab: 'tasks'
+        };
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            updateHeaderUI();
+            switchTab('tasks');
+            startClock();
+            lucide.createIcons();
+        });
+
+        function loadState() {
+            const saved = localStorage.getItem('life_reset_66_data');
+            if (saved) {
+                try {
+                    appData = Object.assign(appData, JSON.parse(saved));
+                } catch(e) {}
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('life_reset_66_data', JSON.stringify(appData));
+        }
+
+        function startClock() {
+            const updateTime = () => {
+                const now = new Date();
+                document.getElementById('system-time').textContent = 
+                    String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            };
+            updateTime();
+            setInterval(updateTime, 10000);
+        }
+
+        // Web Audio Sound Effect Synth
+        function playSuccessSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start();
+                osc.stop(ctx.currentTime + 0.2);
+            } catch(e) {}
+        }
+
+        // Floating XP Animation
+        function spawnXPFloat(event, xpAmount) {
+            const container = document.getElementById('xp-float-container');
+            const el = document.createElement('div');
+            el.className = 'xp-float fixed font-black text-orange-brand text-lg z-50 pointer-events-none orange-glow';
+            el.textContent = `+${xpAmount} XP`;
+            
+            const rect = event.currentTarget.getBoundingClientRect();
+            el.style.left = `${rect.left + 20}px`;
+            el.style.top = `${rect.top - 10}px`;
+
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 800);
+        }
+
+        // Update Header RPG Status
+        function updateHeaderUI() {
+            const maxXP = appData.level * 300;
+            document.getElementById('current-day-num').textContent = appData.day;
+            document.getElementById('streak-count').textContent = appData.streak;
+            document.getElementById('user-level').textContent = appData.level;
+            document.getElementById('current-xp').textContent = appData.xp;
+            document.getElementById('max-xp').textContent = maxXP;
+
+            const pct = Math.min(100, Math.round((appData.xp / maxXP) * 100));
+            document.getElementById('xp-progress-bar').style.width = `${pct}%`;
+
+            const titles = ['【剛覺醒的自律者】', '【作息重置者】', '【鋼鐵意志者】', '【晨型霸主】', '【66天重置大師】'];
+            const titleIndex = Math.min(titles.length - 1, Math.floor(appData.level / 2));
+            document.getElementById('level-title').textContent = titles[titleIndex];
+        }
+
+        // Switch Navigation Tabs
+        function switchTab(tab) {
+            appData.activeTab = tab;
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.className = 'nav-btn flex flex-col items-center gap-1 text-stone-500');
+            const activeNav = document.getElementById(`nav-${tab}`);
+            if (activeNav) activeNav.className = 'nav-btn flex flex-col items-center gap-1 text-orange-brand';
+
+            const container = document.getElementById('main-content');
+            container.innerHTML = '';
+
+            if (tab === 'tasks') renderTasksTab(container);
+            else if (tab === 'stats') renderStatsTab(container);
+            else if (tab === 'achievements') renderAchievementsTab(container);
+            else if (tab === 'ranks') renderRanksTab(container);
+            else if (tab === 'profile') renderProfileTab(container);
+
+            lucide.createIcons();
+        }
+
+        // 1. TASKS TAB (UI matching screenshots)
+        function renderTasksTab(container) {
+            const completedCount = appData.habits.filter(h => h.completed).length;
+
+            let html = `
+                <!-- Science Banner -->
+                <div onclick="toggleScienceModal(true)" class="bg-gradient-to-r from-orange-brand/20 to-stone-900 border border-orange-brand/40 p-3.5 rounded-2xl flex items-center justify-between cursor-pointer hover:border-orange-brand transition-all">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-orange-brand/20 text-orange-brand rounded-xl">
+                            <i data-lucide="zap" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-white">66 天科學作息重置挑戰</div>
+                            <div class="text-[10px] text-stone-400">擺脫熬夜迴圈 • 點擊查看養成研究</div>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-stone-400"></i>
+                </div>
+
+                <!-- Sub Navigation filter -->
+                <div class="flex justify-between items-center text-xs font-bold pt-1">
+                    <span class="text-stone-400 uppercase tracking-wider text-[10px]">今日作息任務 (${completedCount}/${appData.habits.length})</span>
+                    <button onclick="advanceNextDay()" class="text-orange-brand text-[11px] flex items-center gap-1 hover:underline">
+                        <span>結算今日 →</span>
+                    </button>
+                </div>
+
+                <!-- Task Cards List -->
+                <div class="space-y-3">
+            `;
+
+            appData.habits.forEach(habit => {
+                html += `
+                    <div class="card-bg-gradient p-4 rounded-2xl border ${habit.completed ? 'border-orange-brand/50 bg-stone-900/40' : 'border-dark-border'} flex items-center justify-between gap-3 transition-all">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-stone-800 text-amber-500 border border-stone-700">🔥 ${habit.streak} 天續航</span>
+                                <span class="text-[10px] text-stone-400 font-mono">${habit.time}</span>
+                            </div>
+                            <h4 class="text-sm font-bold text-white ${habit.completed ? 'line-through text-stone-400' : ''}">${habit.title}</h4>
+                            <p class="text-[11px] text-stone-400 mt-0.5">${habit.desc}</p>
+                            <div class="flex items-center gap-2 mt-2 text-[10px] text-orange-brand/90 font-mono">
+                                <span>+${habit.xp} XP</span>
+                                <span>•</span>
+                                <span>提升${habit.statName} +2</span>
+                            </div>
+                        </div>
+
+                        <!-- Checkbox Button -->
+                        <button onclick="toggleHabit('${habit.id}', event)" class="p-1">
+                            <div class="w-9 h-9 rounded-xl border-2 flex items-center justify-center transition-all ${
+                                habit.completed 
+                                    ? 'bg-orange-brand border-orange-brand text-white shadow-lg shadow-orange-brand/30 scale-105' 
+                                    : 'border-stone-700 hover:border-orange-brand/50 bg-stone-900'
+                            }">
+                                ${habit.completed ? '<i data-lucide="check" class="w-5 h-5 stroke-[3]"></i>' : ''}
+                            </div>
+                        </button>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // Toggle Habit Completion
+        function toggleHabit(id, event) {
+            const habit = appData.habits.find(h => h.id === id);
+            if (!habit) return;
+
+            habit.completed = !habit.completed;
+
+            if (habit.completed) {
+                habit.streak += 1;
+                appData.xp += habit.xp;
+                appData.stats[habit.stat] += 2;
+                playSuccessSound();
+                spawnXPFloat(event, habit.xp);
+
+                // Level Up Check
+                const maxXP = appData.level * 300;
+                if (appData.xp >= maxXP) {
+                    appData.level += 1;
+                    confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
+                }
+            } else {
+                habit.streak = Math.max(1, habit.streak - 1);
+                appData.xp = Math.max(0, appData.xp - habit.xp);
+                appData.stats[habit.stat] = Math.max(0, appData.stats[habit.stat] - 2);
+            }
+
+            saveState();
+            updateHeaderUI();
+            switchTab('tasks');
+        }
+
+        // Next Day Simulation
+        function advanceNextDay() {
+            if (appData.day >= 66) {
+                alert('🎉 恭喜你完成了 66 天人生重置挑戰！你已經成功重塑了生活型態！');
+                return;
+            }
+            appData.day += 1;
+            appData.streak += 1;
+            appData.habits.forEach(h => h.completed = false);
+            saveState();
+            updateHeaderUI();
+            switchTab('tasks');
+            confetti({ particleCount: 40, spread: 60 });
+        }
+
+        // 2. STATS TAB (RPG Attributes Screen from Screenshot 2)
+        function renderStatsTab(container) {
+            const totalStats = Object.values(appData.stats).reduce((a, b) => a + b, 0);
+
+            container.innerHTML = `
+                <div class="card-bg-gradient p-5 rounded-3xl border border-dark-border space-y-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[10px] text-stone-400 font-mono uppercase tracking-wider">66-DAY RPG RATING</span>
+                            <h3 class="text-xl font-black text-white">你的角色戰力評分</h3>
+                        </div>
+                        <div class="bg-orange-brand/20 text-orange-brand px-3 py-1 rounded-xl text-xs font-black border border-orange-brand/30">
+                            總評分 ${totalStats}
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 pt-2">
+                        ${renderStatRow('智慧 (Mindset)', appData.stats.wisdom, 'brain', 'text-purple-400')}
+                        ${renderStatRow('自信 (Confidence)', appData.stats.confidence, 'sun', 'text-amber-400')}
+                        ${renderStatRow('力量 (Strength)', appData.stats.strength, 'dumbbell', 'text-red-400')}
+                        ${renderStatRow('紀律 (Discipline)', appData.stats.discipline, 'shield-check', 'text-blue-400')}
+                        ${renderStatRow('專注 (Focus)', appData.stats.focus, 'target', 'text-emerald-400')}
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-stone-900/60 border border-dark-border text-xs text-stone-400 leading-relaxed">
+                    💡 <strong>屬性提升說明：</strong><br>
+                    每天打卡睡眠與早起任務增加【紀律與力量】，飲水增加【自信】，閱讀與學習增加【智慧與專注】。
+                </div>
+            `;
+        }
+
+        function renderStatRow(name, val, icon, colorClass) {
+            return `
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-bold">
+                        <span class="flex items-center gap-1.5 text-stone-200">
+                            <i data-lucide="${icon}" class="w-4 h-4 ${colorClass}"></i>
+                            ${name}
+                        </span>
+                        <span class="font-mono text-white">${val} <span class="text-emerald-400 text-[10px]">+${val - 90}</span></span>
+                    </div>
+                    <div class="w-full bg-stone-900 h-2 rounded-full overflow-hidden border border-stone-800">
+                        <div class="bg-gradient-to-r from-stone-600 to-orange-brand h-full rounded-full" style="width: ${Math.min(100, val / 3)}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 3. ACHIEVEMENTS GALLERY (NFT Style Grid from Screenshot 5)
+        function renderAchievementsTab(container) {
+            const cards = [
+                { title: '破曉覺醒', desc: '首次 10:00 前起床', unlocked: true, img: '🌅' },
+                { title: '告別深夜', desc: '連續 3 天 02:00 前入睡', unlocked: true, img: '🌙' },
+                { title: '水分滿格', desc: '累積飲水 10,000ml', unlocked: true, img: '💧' },
+                { title: '鋼鐵意志', desc: '連續打卡 7 天', unlocked: appData.day >= 7, img: '🛡️' },
+                { title: '半途英雄', desc: '完成 33 天重置卡位', unlocked: appData.day >= 33, img: '⚡' },
+                { title: '66天傳奇', desc: '達成全面人生重置', unlocked: appData.day >= 66, img: '👑' }
+            ];
+
+            let html = `
+                <div class="flex justify-between items-center mb-1">
+                    <h3 class="text-sm font-bold text-white">成就畫廊</h3>
+                    <span class="text-xs text-stone-400 font-mono">已解鎖 ${cards.filter(c=>c.unlocked).length}/${cards.length}</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+            `;
+
+            cards.forEach(c => {
+                html += `
+                    <div class="card-bg-gradient p-4 rounded-2xl border ${c.unlocked ? 'border-orange-brand/40' : 'border-dark-border opacity-50'} text-center space-y-2">
+                        <div class="text-3xl my-1">${c.img}</div>
+                        <h4 class="text-xs font-bold text-white">${c.title}</h4>
+                        <p class="text-[10px] text-stone-400">${c.desc}</p>
+                        <span class="inline-block text-[9px] font-bold px-2 py-0.5 rounded ${c.unlocked ? 'bg-orange-brand/20 text-orange-brand' : 'bg-stone-800 text-stone-500'}">
+                            ${c.unlocked ? '已解鎖' : '未達成'}
+                        </span>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // 4. LEADERBOARD / SEASON TAB (From Screenshot 4)
+        function renderRanksTab(container) {
+            container.innerHTML = `
+                <div class="card-bg-gradient p-4 rounded-2xl border border-dark-border space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-white">S1 賽季：重置戰友榜</span>
+                        <span class="text-[10px] text-orange-brand font-mono">剩餘 28 天</span>
+                    </div>
+
+                    <div class="space-y-2 pt-1">
+                        ${renderRankRow(1, 'Ken_Reset', '已堅持 22 天 • 10點起', '3,450 XP', true)}
+                        ${renderRankRow(2, 'Alex_Morning', '已堅持 18 天 • 跑步5k', '2,890 XP', false)}
+                        ${renderRankRow(3, '你 (You)', `已堅持 ${appData.day} 天 • 自律中`, `${appData.xp + 1200} XP`, false, true)}
+                        ${renderRankRow(4, 'Sarah_Health', '已堅持 12 天 • 早睡', '1,720 XP', false)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRankRow(rank, name, desc, xp, isTop, isSelf) {
+            return `
+                <div class="flex items-center justify-between p-2.5 rounded-xl ${isSelf ? 'bg-orange-brand/10 border border-orange-brand/50' : 'bg-stone-900/60'} text-xs">
+                    <div class="flex items-center gap-3">
+                        <span class="font-black font-mono ${rank <= 3 ? 'text-orange-brand' : 'text-stone-500'}">#0${rank}</span>
+                        <div>
+                            <div class="font-bold text-white flex items-center gap-1">
+                                ${name}
+                                ${isSelf ? '<span class="text-[9px] bg-orange-brand text-white px-1 rounded">我</span>' : ''}
+                            </div>
+                            <div class="text-[10px] text-stone-400">${desc}</div>
+                        </div>
+                    </div>
+                    <span class="font-mono font-bold text-stone-200">${xp}</span>
+                </div>
+            `;
+        }
+
+        // 5. PROFILE / BUDDY TAB (From Screenshot 6)
+        function renderProfileTab(container) {
+            container.innerHTML = `
+                <div class="card-bg-gradient p-5 rounded-3xl border border-dark-border text-center space-y-4">
+                    <div class="w-16 h-16 bg-stone-800 rounded-full border-2 border-orange-brand mx-auto flex items-center justify-center text-2xl">
+                        🔥
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">自律者 #66</h3>
+                        <p class="text-xs text-stone-400 mt-0.5">目標：從凌晨5點睡，調整至10點起，重塑健康</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-left pt-2">
+                        <div class="bg-stone-900 p-3 rounded-2xl border border-stone-800">
+                            <span class="text-[10px] text-stone-400 block">目前連續天數</span>
+                            <span class="text-lg font-black text-amber-500">${appData.streak} 天</span>
+                        </div>
+                        <div class="bg-stone-900 p-3 rounded-2xl border border-stone-800">
+                            <span class="text-[10px] text-stone-400 block">66天目標完成度</span>
+                            <span class="text-lg font-black text-orange-brand">${Math.round((appData.day/66)*100)}%</span>
+                        </div>
+                    </div>
+
+                    <button onclick="resetDataPrompt()" class="w-full py-2.5 bg-stone-900 hover:bg-red-950/50 text-red-400 rounded-xl text-xs font-bold border border-stone-800 transition-all">
+                        重置所有進度與數據
+                    </button>
+                </div>
+            `;
+        }
+
+        function toggleScienceModal(show) {
+            document.getElementById('science-modal').classList.toggle('hidden', !show);
+        }
+
+        function resetDataPrompt() {
+            if (confirm('確定要清空所有 66 天紀錄並重新開始嗎？')) {
+                localStorage.removeItem('life_reset_66_data');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
